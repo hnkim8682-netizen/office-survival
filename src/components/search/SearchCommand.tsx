@@ -19,6 +19,7 @@ export function SearchCommand({ className }: { className?: string }) {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const listId = useId();
 
   const suggestions = useMemo(
@@ -34,6 +35,8 @@ export function SearchCommand({ className }: { className?: string }) {
     setOpen(false);
     setQuery("");
     setActiveIndex(0);
+    // Send focus back where it came from, as a dialog should.
+    triggerRef.current?.focus();
   }, []);
 
   useEffect(() => {
@@ -94,9 +97,12 @@ export function SearchCommand({ className }: { className?: string }) {
   return (
     <>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setOpen(true)}
         aria-label="검색 열기"
+        aria-haspopup="dialog"
+        aria-expanded={open}
         className={cn(
           "group inline-flex items-center gap-2 rounded-lg border border-border bg-surface text-muted",
           "transition-colors hover:border-border-strong hover:text-fg",

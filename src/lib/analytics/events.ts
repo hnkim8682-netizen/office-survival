@@ -8,6 +8,7 @@ export const ANALYTICS_EVENTS = {
   gameStart: "game_start",
   gameOver: "game_over",
   themeChange: "theme_change",
+  pageView: "page_view",
 } as const;
 
 export type AnalyticsEvent = (typeof ANALYTICS_EVENTS)[keyof typeof ANALYTICS_EVENTS];

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ANALYTICS_EVENTS, track } from "@/lib/analytics";
 import { useToolVisit } from "@/lib/hooks/useToolVisit";
 import { getPretendMode, type ScreenId } from "@/lib/pretend/config";
+import { getTool } from "@/lib/registry";
 
 import { PretendControls } from "./PretendControls";
 
@@ -42,6 +43,7 @@ const SCREENS: Record<ScreenId, React.ComponentType> = {
 
 export function PretendShell({ modeId }: { modeId: string }) {
   const mode = getPretendMode(modeId);
+  const tool = getTool(modeId);
   const [bossActive, setBossActive] = useState(false);
 
   useToolVisit(modeId, "pretend");
@@ -71,6 +73,11 @@ export function PretendShell({ modeId }: { modeId: string }) {
 
   return (
     <div className="relative flex min-h-dvh flex-col">
+      {/* The screen is a disguise, so the real page heading is for screen
+          readers and search engines only. */}
+      <h1 className="sr-only">{tool?.name} 화면 — 일하는 척</h1>
+      <p className="sr-only">{tool?.description}</p>
+
       <Screen />
       <PretendControls
         bossActive={bossActive}

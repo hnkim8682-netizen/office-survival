@@ -1,3 +1,4 @@
+import { RouteAnalytics } from "@/components/analytics/RouteAnalytics";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 
@@ -10,6 +11,7 @@ export default function SiteLayout({ children }: LayoutProps<"/">) {
       >
         본문으로 건너뛰기
       </a>
+      <RouteAnalytics />
       <Header />
       <main id="main" className="flex-1">
         {children}
