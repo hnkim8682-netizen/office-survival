@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { NavLinks } from "@/components/navigation/NavLinks";
 import { SearchCommand } from "@/components/search/SearchCommand";
@@ -13,10 +13,11 @@ import { Logo } from "./Logo";
 
 export function Header() {
   const pathname = usePathname();
-  const [menuOpen, setMenuOpen] = useState(false);
+  // Storing the route the menu was opened on closes it on navigation for free.
+  const [openedOn, setOpenedOn] = useState<string | null>(null);
+  const menuOpen = openedOn === pathname;
 
-  // Route changes should always close the mobile sheet.
-  useEffect(() => setMenuOpen(false), [pathname]);
+  const setMenuOpen = (open: boolean) => setOpenedOn(open ? pathname : null);
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-bg/85 backdrop-blur-md">
@@ -32,7 +33,7 @@ export function Header() {
           <ThemeToggle />
           <button
             type="button"
-            onClick={() => setMenuOpen((value) => !value)}
+            onClick={() => setMenuOpen(!menuOpen)}
             aria-expanded={menuOpen}
             aria-controls="mobile-nav"
             aria-label={menuOpen ? "메뉴 닫기" : "메뉴 열기"}

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+import { useHydrated } from "@/lib/hooks/useHydrated";
 import { usePrefersReducedMotion } from "@/lib/hooks/useMediaQuery";
 import { seededRandom } from "@/lib/pretend/random";
 import { cn } from "@/lib/utils/cn";
@@ -42,9 +43,8 @@ const REGIONS = [
 export function DashboardScreen() {
   const reducedMotion = usePrefersReducedMotion();
   const [drift, setDrift] = useState(0);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => setMounted(true), []);
+  // Bars and bars-like widths animate from zero on the first client paint.
+  const mounted = useHydrated();
 
   // A slow, deterministic wobble so the numbers look live without flickering.
   useEffect(() => {

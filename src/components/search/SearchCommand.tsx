@@ -37,25 +37,18 @@ export function SearchCommand({ className }: { className?: string }) {
   }, []);
 
   useEffect(() => {
+    // Only ⌘K / Ctrl+K: a bare "/" would collide with the calculator and the
+    // spreadsheet, which both accept raw keystrokes.
     const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      const typing =
-        target?.tagName === "INPUT" ||
-        target?.tagName === "TEXTAREA" ||
-        target?.isContentEditable;
-
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setOpen((value) => !value);
-      } else if (event.key === "/" && !typing && !open) {
-        event.preventDefault();
-        setOpen(true);
       }
     };
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open]);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -67,8 +60,6 @@ export function SearchCommand({ className }: { className?: string }) {
       style.overflow = previous;
     };
   }, [open]);
-
-  useEffect(() => setActiveIndex(0), [query]);
 
   const go = (href: string) => {
     if (query.trim()) track(ANALYTICS_EVENTS.search, { query: query.trim(), target: href });
@@ -139,7 +130,10 @@ export function SearchCommand({ className }: { className?: string }) {
               <input
                 ref={inputRef}
                 value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                onChange={(event) => {
+                  setQuery(event.target.value);
+                  setActiveIndex(0);
+                }}
                 onKeyDown={onKeyDown}
                 placeholder="엑셀, 계산기, 퇴근…"
                 aria-label="검색어"

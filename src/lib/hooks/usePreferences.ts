@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
+import { useHydrated } from "@/lib/hooks/useHydrated";
 import {
-  DEFAULT_PREFERENCES,
+  getDefaultPreferences,
   getPreferences,
   setPreferences,
   subscribeToPreferences,
@@ -11,21 +12,19 @@ import {
 } from "@/lib/storage/preferences";
 
 /**
- * Reads preferences after mount (localStorage is unavailable during SSR) and
- * keeps every consumer in sync through the store's subscription.
+ * Reads preferences from the store (localStorage-backed) and keeps every
+ * consumer in sync. `hydrated` is false until the browser values are in play.
  */
 export function usePreferences() {
-  const [preferences, setState] = useState<Preferences>(DEFAULT_PREFERENCES);
-  const [hydrated, setHydrated] = useState(false);
-
-  useEffect(() => {
-    setState(getPreferences());
-    setHydrated(true);
-    return subscribeToPreferences(setState);
-  }, []);
+  const preferences = useSyncExternalStore(
+    subscribeToPreferences,
+    getPreferences,
+    getDefaultPreferences,
+  );
+  const hydrated = useHydrated();
 
   const update = useCallback((patch: Partial<Preferences>) => {
-    setState(setPreferences(patch));
+    setPreferences(patch);
   }, []);
 
   return { preferences, update, hydrated };

@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
+
+import { getClockServerSnapshot, getClockSnapshot, subscribeToClock } from "@/lib/store/clock";
 
 /**
- * Ticking clock. Returns null on the server and on the first client render so
+ * Ticking clock. Null on the server and on the first client render, so
  * time-dependent UI never causes a hydration mismatch.
  */
-export function useNow(intervalMs = 1000): Date | null {
-  const [now, setNow] = useState<Date | null>(null);
+export function useNow(): Date | null {
+  const timestamp = useSyncExternalStore(
+    subscribeToClock,
+    getClockSnapshot,
+    getClockServerSnapshot,
+  );
 
-  useEffect(() => {
-    setNow(new Date());
-    const id = window.setInterval(() => setNow(new Date()), intervalMs);
-    return () => window.clearInterval(id);
-  }, [intervalMs]);
-
-  return now;
+  return timestamp === 0 ? null : new Date(timestamp);
 }

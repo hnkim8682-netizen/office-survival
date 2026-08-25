@@ -21,7 +21,7 @@ interface QuitCountdownProps {
 }
 
 export function QuitCountdown({ variant = "hero", className }: QuitCountdownProps) {
-  const now = useNow(1000);
+  const now = useNow();
   const { preferences, update, hydrated } = usePreferences();
   const [settingsOpen, setSettingsOpen] = useState(variant === "full");
 

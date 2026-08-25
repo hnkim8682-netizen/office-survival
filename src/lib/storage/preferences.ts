@@ -19,42 +19,63 @@ export const DEFAULT_PREFERENCES: Preferences = {
   weekendOff: true,
 };
 
-const EVENT = "office-survival:preferences";
+type Listener = () => void;
 
-/**
- * Preferences live in localStorage today. Once Firebase Auth is enabled the
- * same read/write pair can hydrate from Firestore for signed-in users — every
- * caller already goes through these two functions and the subscription below.
- */
-export function getPreferences(): Preferences {
+const listeners = new Set<Listener>();
+/** Cached so getPreferences() is referentially stable for useSyncExternalStore. */
+let snapshot: Preferences = DEFAULT_PREFERENCES;
+let loaded = false;
+
+function load(): Preferences {
   const stored = readLocal<Partial<Preferences>>(STORAGE_KEYS.preferences, {});
   return { ...DEFAULT_PREFERENCES, ...stored };
 }
 
-export function setPreferences(patch: Partial<Preferences>): Preferences {
-  const next = { ...getPreferences(), ...patch };
-  writeLocal(STORAGE_KEYS.preferences, next);
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new CustomEvent<Preferences>(EVENT, { detail: next }));
-  }
-  return next;
+function emit() {
+  listeners.forEach((listener) => listener());
 }
 
-/** Notifies every mounted component when preferences change (same tab or another). */
-export function subscribeToPreferences(listener: (value: Preferences) => void): () => void {
-  if (typeof window === "undefined") return () => {};
+/**
+ * Preferences live in localStorage today. Once Firebase Auth is enabled the
+ * same load/save pair can hydrate from Firestore for signed-in users — every
+ * caller already goes through this store.
+ */
+export function getPreferences(): Preferences {
+  return snapshot;
+}
 
-  const onCustom = (event: Event) => {
-    listener((event as CustomEvent<Preferences>).detail ?? getPreferences());
-  };
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === STORAGE_KEYS.preferences) listener(getPreferences());
-  };
+export function getDefaultPreferences(): Preferences {
+  return DEFAULT_PREFERENCES;
+}
 
-  window.addEventListener(EVENT, onCustom);
-  window.addEventListener("storage", onStorage);
+export function setPreferences(patch: Partial<Preferences>): Preferences {
+  snapshot = { ...snapshot, ...patch };
+  writeLocal(STORAGE_KEYS.preferences, snapshot);
+  emit();
+  return snapshot;
+}
+
+/** Notifies every subscriber when preferences change, in this tab or another. */
+export function subscribeToPreferences(listener: Listener): () => void {
+  if (listeners.size === 0) {
+    // First subscriber: read storage and pick up cross-tab writes.
+    if (!loaded) {
+      snapshot = load();
+      loaded = true;
+    }
+    window.addEventListener("storage", onStorage);
+  }
+
+  listeners.add(listener);
+
   return () => {
-    window.removeEventListener(EVENT, onCustom);
-    window.removeEventListener("storage", onStorage);
+    listeners.delete(listener);
+    if (listeners.size === 0) window.removeEventListener("storage", onStorage);
   };
+}
+
+function onStorage(event: StorageEvent) {
+  if (event.key !== STORAGE_KEYS.preferences) return;
+  snapshot = load();
+  emit();
 }

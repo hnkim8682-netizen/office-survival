@@ -1,18 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
-import { getRecentToolIds, subscribeToRecentTools } from "@/lib/storage/recent-tools";
+import { useHydrated } from "@/lib/hooks/useHydrated";
+import {
+  getEmptyRecentToolIds,
+  getRecentToolIds,
+  subscribeToRecentTools,
+} from "@/lib/storage/recent-tools";
 
 export function useRecentToolIds(): { ids: string[]; hydrated: boolean } {
-  const [ids, setIds] = useState<string[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const ids = useSyncExternalStore(
+    subscribeToRecentTools,
+    getRecentToolIds,
+    getEmptyRecentToolIds,
+  );
 
-  useEffect(() => {
-    setIds(getRecentToolIds());
-    setHydrated(true);
-    return subscribeToRecentTools(setIds);
-  }, []);
-
-  return { ids, hydrated };
+  return { ids, hydrated: useHydrated() };
 }

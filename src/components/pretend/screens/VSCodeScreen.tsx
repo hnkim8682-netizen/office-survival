@@ -159,39 +159,52 @@ const CHARS_PER_TICK = 4;
 const HEAD_START = 0.45;
 const FILE_PAUSE_MS = 2600;
 
+function headStart(fileIndex: number): number {
+  return Math.floor(FILES[fileIndex].code.length * HEAD_START);
+}
+
 export function VSCodeScreen() {
   const reducedMotion = usePrefersReducedMotion();
-  const [fileIndex, setFileIndex] = useState(0);
-  const [typed, setTyped] = useState(0);
+  // File and caret position move together, so they live in one state value.
+  const [progress, setProgress] = useState(() => ({ fileIndex: 0, typed: headStart(0) }));
 
-  const file = FILES[fileIndex];
+  const file = FILES[progress.fileIndex];
+  const complete = progress.typed >= file.code.length;
 
   useEffect(() => {
-    if (reducedMotion) {
-      setTyped(file.code.length);
-      return;
-    }
+    if (reducedMotion || complete) return;
 
-    setTyped(Math.floor(file.code.length * HEAD_START));
     const interval = window.setInterval(() => {
-      setTyped((count) => Math.min(count + CHARS_PER_TICK, file.code.length));
+      setProgress((current) => ({
+        ...current,
+        typed: Math.min(
+          current.typed + CHARS_PER_TICK,
+          FILES[current.fileIndex].code.length,
+        ),
+      }));
     }, TYPING_INTERVAL);
 
     return () => window.clearInterval(interval);
-  }, [file, reducedMotion]);
+  }, [reducedMotion, complete]);
 
   // Once a file finishes typing, pause and move on to the next one.
   useEffect(() => {
-    if (reducedMotion || typed < file.code.length) return;
+    if (reducedMotion || !complete) return;
 
     const timeout = window.setTimeout(() => {
-      setFileIndex((index) => (index + 1) % FILES.length);
+      setProgress((current) => {
+        const fileIndex = (current.fileIndex + 1) % FILES.length;
+        return { fileIndex, typed: headStart(fileIndex) };
+      });
     }, FILE_PAUSE_MS);
 
     return () => window.clearTimeout(timeout);
-  }, [typed, file, reducedMotion]);
+  }, [reducedMotion, complete]);
 
-  const lines = useMemo(() => file.code.slice(0, typed).split("\n"), [file.code, typed]);
+  const lines = useMemo(
+    () => (reducedMotion ? file.code : file.code.slice(0, progress.typed)).split("\n"),
+    [file.code, progress.typed, reducedMotion],
+  );
   const column = (lines.at(-1)?.length ?? 0) + 1;
 
   return (
@@ -267,7 +280,7 @@ export function VSCodeScreen() {
                 key={tab.name}
                 className={cn(
                   "flex items-center gap-2 border-r border-black/40 px-3.5 whitespace-nowrap",
-                  index === fileIndex
+                  index === progress.fileIndex
                     ? "bg-[#1e1e1e] text-white"
                     : "bg-[#2d2d2d] text-[#969696]",
                 )}
@@ -276,7 +289,7 @@ export function VSCodeScreen() {
                   TS
                 </span>
                 {tab.name}
-                {index === fileIndex ? (
+                {index === progress.fileIndex ? (
                   <span className="size-1.5 rounded-full bg-white/70" aria-hidden="true" />
                 ) : null}
               </span>

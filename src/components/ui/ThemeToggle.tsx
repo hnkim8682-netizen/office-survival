@@ -1,25 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import { ANALYTICS_EVENTS, track } from "@/lib/analytics";
+import { useHydrated } from "@/lib/hooks/useHydrated";
 import { applyTheme, getActiveTheme, type Theme } from "@/lib/theme";
 import { cn } from "@/lib/utils/cn";
 
 import { Icon } from "./Icon";
 
 export function ThemeToggle({ className }: { className?: string }) {
-  const [theme, setTheme] = useState<Theme>("dark");
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setTheme(getActiveTheme());
-    setMounted(true);
-  }, []);
+  const hydrated = useHydrated();
+  const [override, setOverride] = useState<Theme | null>(null);
+  // Before hydration we cannot read the DOM attribute the theme script set.
+  const theme: Theme = override ?? (hydrated ? getActiveTheme() : "dark");
 
   const toggle = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
-    setTheme(next);
+    setOverride(next);
     applyTheme(next);
     track(ANALYTICS_EVENTS.themeChange, { theme: next });
   };
@@ -36,7 +34,7 @@ export function ThemeToggle({ className }: { className?: string }) {
       )}
     >
       {/* Render the dark icon until mounted so SSR and client markup agree. */}
-      <Icon name={mounted && theme === "light" ? "moon" : "sun"} size={17} />
+      <Icon name={hydrated && theme === "light" ? "moon" : "sun"} size={17} />
     </button>
   );
 }
