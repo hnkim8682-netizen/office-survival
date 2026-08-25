@@ -6,7 +6,7 @@ export type Theme = "dark" | "light";
 /** Runs before paint in the root layout, so the page never flashes. */
 export const THEME_INIT_SCRIPT = `(function(){try{var v=localStorage.getItem(${JSON.stringify(
   STORAGE_KEYS.theme,
-)});var t=v?JSON.parse(v):null;if(t!=='light'&&t!=='dark'){t=window.matchMedia('(prefers-color-scheme: light)').matches?'light':'dark';}document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
+)});var t=v?JSON.parse(v):null;document.documentElement.setAttribute('data-theme',t==='light'?'light':'dark');}catch(e){document.documentElement.setAttribute('data-theme','dark');}})();`;
 
 export function getStoredTheme(): Theme | null {
   const value = readLocal<Theme | null>(STORAGE_KEYS.theme, null);

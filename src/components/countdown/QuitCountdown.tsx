@@ -68,7 +68,7 @@ export function QuitCountdown({ variant = "hero", className }: QuitCountdownProp
           </p>
         ) : (
           <div
-            className="mt-5 flex items-baseline gap-2 font-mono text-[clamp(2.75rem,11vw,5.5rem)] font-semibold leading-none tracking-tight tabular"
+            className="mt-5 flex items-baseline gap-2 font-mono text-[clamp(2.5rem,8vw,4.5rem)] font-semibold leading-none tracking-tight tabular"
             aria-live="off"
           >
             {ready ? (
